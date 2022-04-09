@@ -11,8 +11,36 @@ module.exports = {
     tickets: "./assets/js/tickets.js",
   },
   output: {
-    path: path.resolve(__dirname, "dist"),
+    path: __dirname + "/dist",
     filename: "[name].bundle.js",
+  },
+  module: {
+    // Regex for ending in webp while being case-insensitive
+    rules: [
+      {
+        test: /\.webp$/i,
+        use: [
+          {
+            loader: "file-loader",
+            // Not only does it give the images proper names, but it puts them in proper folders
+            // In this case, assets/img inside of the dist folder
+            options: {
+              esModule: false,
+              name(file) {
+                return "[path][name].[ext]";
+              },
+              publicPath: function (url) {
+                // Replaces the ../ from require() with /assets/
+                return url.replace("../", "/assets/");
+              },
+            },
+          },
+          {
+            loader: "image-webpack-loader",
+          },
+        ],
+      },
+    ],
   },
   plugins: [
     new webpack.ProvidePlugin({
