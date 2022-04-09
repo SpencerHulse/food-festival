@@ -11,8 +11,8 @@ module.exports = {
     tickets: "./assets/js/tickets.js",
   },
   output: {
-    path: __dirname + "/dist",
     filename: "[name].bundle.js",
+    path: `${__dirname}/dist`,
   },
   module: {
     // Regex for ending in webp while being case-insensitive

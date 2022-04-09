@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Food Festival</title>
-    <link rel="stylesheet" href="assets/css/style.css" />
-    <link rel="stylesheet" href="assets/css/bootstrap.css" />
+    <link rel="stylesheet" href="./assets/css/style.css" />
+    <link rel="stylesheet" href="./assets/css/bootstrap.css" />
     <link
       rel="stylesheet"
       href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
@@ -69,7 +69,7 @@
           <div
             id="carousel-item-1"
             class="carousel-item fullscreen-carousel active"
-            style="background-image: url('assets/img/chips.webp')"
+            style="background-image: url('./assets/img/chips.webp')"
           >
             <div
               class="d-flex h-100 align-items-center justify-content-center carousel-caption"
@@ -228,4 +228,16 @@
       </div>
     </footer>
   </body>
+  <script>
+    (function () {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("./service-worker.js")
+          .then(() => console.log("Service Worker registered successfully."))
+          .catch((error) =>
+            console.log("Service Worker registration failed:", error)
+          );
+      }
+    })();
+  </script>
 </html>

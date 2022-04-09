@@ -6,7 +6,7 @@ function createLoremIpsum(numWords = 50) {
   return result;
 }
 
-dateConverter = function (UNIX_timestamp) {
+const dateConverter = (UNIX_timestamp) => {
   const a = new Date(UNIX_timestamp);
   const months = [
     "Jan",
