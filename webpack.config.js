@@ -14,6 +14,7 @@ module.exports = {
   output: {
     filename: "[name].bundle.js",
     path: `${__dirname}/dist`,
+    publicPath: "",
   },
   module: {
     // Regex for ending in webp while being case-insensitive
