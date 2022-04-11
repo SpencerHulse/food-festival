@@ -53,37 +53,34 @@ self.addEventListener("activate", function (e) {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Ignore crossdomain requests
-  if (!event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
-  // Ignore non-GET requests
-  if (event.request.method !== "GET") {
-    return;
-  }
-  // Ignore browser-sync
-  if (event.request.url.indexOf("browser-sync") > -1) {
-    return;
-  }
-  console.log(event);
-  // Tell the fetch to respond with this chain
   event.respondWith(
-    // Open the cache
-    caches.open(CACHE_NAME).then((cache) => {
-      // Look for matching request in the cache
-      return cache.match(event.request).then((matched) => {
-        // If a match is found return the cached version first
-        if (matched) {
-          return matched;
-        }
-        // Otherwise continue to the network
-        return fetch(event.request).then((response) => {
-          // Cache the response
-          cache.put(event.request, response.clone());
-          // Return the original response to the page
-          return response;
+    caches.match(event.request).then(function (cached) {
+      let networked = fetch(event.request)
+        .then(fetchedFromNetwork, unableToResolve)
+        .catch(unableToResolve);
+      return cached || networked;
+
+      function fetchedFromNetwork(response) {
+        let cacheCopy = response.clone();
+
+        caches
+          .open(CACHE_NAME)
+          .then(function add(cache) {
+            cache.put(event.request, cacheCopy);
+          })
+          .then(function () {
+            console.log(`Fetch response stored in cache`);
+          });
+        return response;
+      }
+
+      function unableToResolve() {
+        return new Response(`<h1>Service Unavailable</h1>`, {
+          status: 503,
+          statusText: "Service Unavailable",
+          headers: new Headers({ "content-Type": "text/plain" }),
         });
-      });
+      }
     })
   );
 });
