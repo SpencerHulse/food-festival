@@ -15,36 +15,35 @@ const FILES_TO_CACHE = [
   "./dist/schedule.bundle.js",
 ];
 
-// Cache resources
-// Use self because service workers run before the window object is created
-// Self refers to the service worker object
 self.addEventListener("install", function (e) {
-  // Waits until work is complete to terminate the service worker
   e.waitUntil(
-    // caches.open finds a cache by name
-    caches.open(CACHE_NAME).then(function (cache) {
-      console.log("installing cache : " + CACHE_NAME);
-      // Adds everything in FILES_TO_CACHE to the opened cache
-      return cache.addAll(FILES_TO_CACHE);
-    })
+    // Add files to the cache
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => {
+        console.log(`Installing cache : ${CACHE_NAME}`);
+        return cache.addAll(FILES_TO_CACHE);
+      })
+      .then(self.skipWaiting())
   );
 });
 
-// Clear out old cache data
 self.addEventListener("activate", function (e) {
   e.waitUntil(
-    caches.keys().then(function (keyList) {
+    // Gets the keys in cache and filters it for this apps keys
+    caches.keys().then((keyList) => {
       let cacheKeepList = keyList.filter(function (key) {
         return key.indexOf(APP_PREFIX);
       });
 
+      // Push the new files to the cacheKeepList
       cacheKeepList.push(CACHE_NAME);
 
-      // Promise that resolves when all old versions of the cache are deleted
+      // Promise that only resolves when old version of the cache is deleted
       return Promise.all(
         keyList.map(function (key, i) {
           if (cacheKeepList.indexOf(key) === -1) {
-            console.log(`deleting cache : ${keyList[i]}`);
+            console.log(`Deleting cache : ${keyList[i]}`);
             return caches.delete(keyList[i]);
           }
         })
@@ -53,19 +52,38 @@ self.addEventListener("activate", function (e) {
   );
 });
 
-// Takes care of retrieving information from the cache for the site
-self.addEventListener("fetch", function (e) {
-  console.log(`fetch request : ${e.request.url}`);
-  e.respondWith(
-    caches.match(e.request).then(function (request) {
-      if (request) {
-        console.log(`responding with cache : ${e.request.url}`);
-        return request;
-      } else {
-        console.log(`file is not cached, fetching : ${e.request.url}`);
-        return fetch(e.request);
-      }
-      // This if else could be replaced with return request || fetch(e.request)
+self.addEventListener("fetch", (event) => {
+  // Ignore crossdomain requests
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+  // Ignore non-GET requests
+  if (event.request.method !== "GET") {
+    return;
+  }
+  // Ignore browser-sync
+  if (event.request.url.indexOf("browser-sync") > -1) {
+    return;
+  }
+  console.log(event);
+  // Tell the fetch to respond with this chain
+  event.respondWith(
+    // Open the cache
+    caches.open(CACHE_NAME).then((cache) => {
+      // Look for matching request in the cache
+      return cache.match(event.request).then((matched) => {
+        // If a match is found return the cached version first
+        if (matched) {
+          return matched;
+        }
+        // Otherwise continue to the network
+        return fetch(event.request).then((response) => {
+          // Cache the response
+          cache.put(event.request, response.clone());
+          // Return the original response to the page
+          return response;
+        });
+      });
     })
   );
 });
