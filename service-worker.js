@@ -15,21 +15,18 @@ const FILES_TO_CACHE = [
   "./dist/schedule.bundle.js",
 ];
 
-self.addEventListener("install", function (e) {
-  e.waitUntil(
+self.addEventListener("install", function (event) {
+  event.waitUntil(
     // Add files to the cache
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => {
-        console.log(`Installing cache : ${CACHE_NAME}`);
-        return cache.addAll(FILES_TO_CACHE);
-      })
-      .then(self.skipWaiting())
+    caches.open(CACHE_NAME).then(function (cache) {
+      console.log("installing cache : " + CACHE_NAME);
+      return cache.addAll(FILES_TO_CACHE);
+    })
   );
 });
 
-self.addEventListener("activate", function (e) {
-  e.waitUntil(
+self.addEventListener("activate", function (event) {
+  event.waitUntil(
     // Gets the keys in cache and filters it for this apps keys
     caches.keys().then((keyList) => {
       let cacheKeepList = keyList.filter(function (key) {
@@ -43,7 +40,7 @@ self.addEventListener("activate", function (e) {
       return Promise.all(
         keyList.map(function (key, i) {
           if (cacheKeepList.indexOf(key) === -1) {
-            console.log(`Deleting cache : ${keyList[i]}`);
+            console.log("deleting cache : " + keyList[i]);
             return caches.delete(keyList[i]);
           }
         })
@@ -54,32 +51,11 @@ self.addEventListener("activate", function (e) {
 
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      let networked = fetch(event.request)
-        .then(fetchedFromNetwork, unableToResolve)
-        .catch(unableToResolve);
-      return cached || networked;
-
-      function fetchedFromNetwork(response) {
-        let cacheCopy = response.clone();
-
-        caches
-          .open(CACHE_NAME)
-          .then(function add(cache) {
-            cache.put(event.request, cacheCopy);
-          })
-          .then(function () {
-            console.log(`Fetch response stored in cache`);
-          });
-        return response;
-      }
-
-      function unableToResolve() {
-        return new Response(`<h1>Service Unavailable</h1>`, {
-          status: 503,
-          statusText: "Service Unavailable",
-          headers: new Headers({ "content-Type": "text/plain" }),
-        });
+    caches.match(event.request).then(function (request) {
+      if (request) {
+        return request;
+      } else {
+        return fetch(event.request);
       }
     })
   );
